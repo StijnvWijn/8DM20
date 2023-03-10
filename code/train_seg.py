@@ -13,10 +13,11 @@ import utils
 random.seed(42)
 
 # directorys with data and to store training checkpoints and logs
-DATA_DIR = Path.cwd() / "TrainingData"
+DATA_DIR = Path("C:/Users/stijn/Desktop/school/TUe/2022-2023/8DM20 - Capita Selecta Image Analysis/8DM20 - Project/Data")
 CHECKPOINTS_DIR = Path.cwd() / "segmentation_model_weights"
 CHECKPOINTS_DIR.mkdir(parents=True, exist_ok=True)
 TENSORBOARD_LOGDIR = "segmentation_runs"
+device = torch.device("cuda:0")
 
 # training settings and hyperparameters
 NO_VALIDATION_PATIENTS = 2
@@ -24,7 +25,10 @@ IMAGE_SIZE = [64, 64]
 BATCH_SIZE = 32
 N_EPOCHS = 100
 LEARNING_RATE = 1e-4
+MOMENTUM = 0.9
 TOLERANCE = 0.01  # for early stopping
+
+print(f'GPU initialized {torch.cuda.get_device_properties(None)}')
 
 # find patient folders in training directory
 # excluding hidden folders (start with .)
@@ -62,26 +66,53 @@ valid_dataloader = DataLoader(
 )
 
 # initialise model, optimiser, and loss function
-loss_function = # TODO 
-unet_model = # TODO 
-optimizer = # TODO 
+loss_function = torch.nn.functional.mse_loss
+unet_model = u_net.UNet(enc_chs=(1, 64, 128, 256), dec_chs=(256, 128, 64, 32), num_classes=1)
+optimizer = torch.optim.SGD(unet_model.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM)
 
 minimum_valid_loss = 10  # initial validation loss
 writer = SummaryWriter(log_dir=TENSORBOARD_LOGDIR)  # tensorboard summary
 
 # training loop
 for epoch in range(N_EPOCHS):
+    print(f"Starting epoch {epoch} of {N_EPOCHS}")
+    if (device.type == 'cuda'):
+        unet_model = unet_model.cuda()
+
     current_train_loss = 0.0
     current_valid_loss = 0.0
-    
-    # TODO 
-    # training iterations
 
+    for batch_idx, (input, target) in enumerate(dataloader):
+        if (device.type == 'cuda'):
+            input = input.cuda()
+            target = target.cuda()
+
+        optimizer.zero_grad()
+
+        result = unet_model(input)
+
+        loss = loss_function(result,target.float())
+        loss.backward()
+        optimizer.step()
+
+        current_train_loss = current_train_loss + loss.item()
+
+        if batch_idx % 100 == 0:
+            print(f"Training batch {batch_idx} of {len(dataloader)} training loss: {loss.item():.5f}")
 
     # evaluate validation loss
     with torch.no_grad():
         unet_model.eval()
-        # TODO 
+        for batch_idx, (input, target) in enumerate(valid_dataloader):
+            if (device.type == 'cuda'):
+                input = input.cuda()
+                target = target.cuda()
+
+            result = unet_model(input)
+
+            loss = loss_function(result, target)
+
+            current_valid_loss = current_valid_loss + loss.item()
 
         unet_model.train()
 

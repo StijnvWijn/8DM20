@@ -109,12 +109,12 @@ class DiceBCELoss(nn.Module):
         outputs = torch.sigmoid(outputs)
 
         # flatten label and prediction tensors
-        inputs = inputs.view(-1)
+        outputs = outputs.view(-1)
         targets = targets.view(-1)
 
         # compute Dice
-        intersection = (inputs * targets).sum()
-        dice_loss = # TODO
-        BCE = # TODO
+        intersection = (outputs * targets).sum()
+        dice_loss = 2 * intersection / (outputs + targets).sum()
+        BCE = -np.mean((1-targets) * np.log(1-outputs) + targets * np.log(outputs), axis = 0)
 
         return BCE + dice_loss
