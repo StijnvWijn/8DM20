@@ -13,7 +13,9 @@ import utils
 random.seed(42)
 
 # directorys with data and to stored training checkpoints
-DATA_DIR = Path.cwd() / "TrainingData"
+DATA_DIR = Path("C:/Users/stijn/Desktop/school/TUe/2022-2023/8DM20 - Capita Selecta Image Analysis/8DM20 - Project/Data")
+
+# this is my best epoch - what is yours?
 BEST_EPOCH = 30
 CHECKPOINTS_DIR = Path.cwd() / "segmentation_model_weights" / f"u_net_{BEST_EPOCH}.pth"
 
@@ -47,15 +49,21 @@ unet_model.eval()
 # apply for all images and compute Dice score with ground-truth.
 # output .mhd images with the predicted segmentations
 with torch.no_grad():
-    predict_index = 75
+    predict_index = 80
     (input, target) = valid_dataset[predict_index]
     output = torch.sigmoid(unet_model(input[np.newaxis, ...]))
     prediction = torch.round(output)
 
-    plt.subplot(131)
-    plt.imshow(input[0], cmap="gray")
-    plt.subplot(132)
-    plt.imshow(target[0])
-    plt.subplot(133)
-    plt.imshow(prediction[0, 0])
+    fig, ax = plt.subplots(1, 3)
+    ax[0].imshow(input[0], cmap="gray")
+    ax[0].set_title("Input")
+    ax[0].axis("off")
+
+    ax[1].imshow(target[0], cmap="gray")
+    ax[1].set_title("Ground-truth")
+    ax[1].axis("off")
+
+    ax[2].imshow(prediction[0, 0], cmap="gray")
+    ax[2].set_title("Prediction")
+    ax[2].axis("off")
     plt.show()
